@@ -2,18 +2,20 @@ import asyncio
 import os
 
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message, BotCommandScopeAllPrivateChats
-from aiogram.filters import Command
+# from aiogram.types import Message, BotCommandScopeAllPrivateChats
+# from aiogram.filters import Command
 
 from dotenv import find_dotenv, load_dotenv
 
 from handlers.user_router import user_router
+from handlers.group_router import group_router
 # from common.bot_commands import private_commands
 
 load_dotenv(find_dotenv())
 bot = Bot(token=os.getenv('TOKEN'))
 dp = Dispatcher(bot=bot)
 dp.include_router(user_router)
+dp.include_router(group_router)
 
 
 async def main():
