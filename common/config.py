@@ -11,3 +11,26 @@ rules = ("<i><u>Правила игры \"Мафия\"</u></i>\n"
          "•  🕵️<b>Мафия</b> выигрывает, если её членов становится больше или столько же, сколько мирных.\n"
          "\n"
          "<i>Все действия выполняются через бота в чате и личных сообщениях.</i>")
+
+
+CIVILIANS = 'civilians'
+MAFIA = 'mafia'
+DETECTIVE = 'detective'
+PUTANA = 'putana'
+MANIAC = 'maniac'
+DOCTOR = 'doctor'
+roles = {
+    5: {CIVILIANS: 3, MAFIA: 1, DETECTIVE:1},
+    6: {CIVILIANS: 3, MAFIA: 1, DETECTIVE:1, PUTANA:1},
+    7: {CIVILIANS: 3, MAFIA: 2, DETECTIVE:1, PUTANA:1},
+    8: {CIVILIANS: 4, MAFIA: 2, DETECTIVE:1, PUTANA:1},
+    9: {CIVILIANS: 4, MAFIA: 2, DETECTIVE:1, PUTANA:1, DOCTOR: 1},
+    10: {CIVILIANS: 4, MAFIA: 2, DETECTIVE:1, PUTANA:1, DOCTOR: 1, MANIAC: 1},
+    11: {CIVILIANS: 4, MAFIA: 3, DETECTIVE:1, PUTANA:1, DOCTOR: 1, MANIAC: 1},
+}
+def get_roles_list(count: int):
+    role_list = []
+    for key, val in roles[count].items():
+        for i in range(val):
+            role_list.append(key)
+    return role_list
