@@ -10,7 +10,7 @@ user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group",
 
 
 @user_group_router.message(Command("start_game"))
-async def start_game_command(message: Message):
+async def start_game_command(message: Message) -> None:
     await message.delete()
     members = check_members()
     players_id = []
