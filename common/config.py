@@ -28,3 +28,25 @@ GROUP_TO_LOG = "-1002379509893"
 GROUP_TO_LOG_THREAD = 195
 
 ANTIFLOOD_DELAY = 1
+
+CIVILIANS = 'civilians'
+MAFIA = 'mafia'
+DETECTIVE = 'detective'
+PUTANA = 'putana'
+MANIAC = 'maniac'
+DOCTOR = 'doctor'
+roles = {
+    5: {CIVILIANS: 3, MAFIA: 1, DETECTIVE:1},
+    6: {CIVILIANS: 3, MAFIA: 1, DETECTIVE:1, PUTANA:1},
+    7: {CIVILIANS: 3, MAFIA: 2, DETECTIVE:1, PUTANA:1},
+    8: {CIVILIANS: 4, MAFIA: 2, DETECTIVE:1, PUTANA:1},
+    9: {CIVILIANS: 4, MAFIA: 2, DETECTIVE:1, PUTANA:1, DOCTOR: 1},
+    10: {CIVILIANS: 4, MAFIA: 2, DETECTIVE:1, PUTANA:1, DOCTOR: 1, MANIAC: 1},
+    11: {CIVILIANS: 4, MAFIA: 3, DETECTIVE:1, PUTANA:1, DOCTOR: 1, MANIAC: 1},
+}
+def get_roles_list(count: int):
+    role_list = []
+    for key, val in roles[count].items():
+        for i in range(val):
+            role_list.append(key)
+    return role_list
