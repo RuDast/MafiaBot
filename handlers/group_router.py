@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram import F
 
 from common.config import get_roles_list
-from database.database import check_members
+from database.database import check_members, add_game_session
 
 user_group_router = Router()
 user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group", "supergroup"]))
@@ -34,6 +34,6 @@ async def start_game_command(message: Message) -> None:
     for i in range(len(players_id)):
         roles_user[players_id[i]] = roles_list[i]
         await message.bot.send_message(players_id[i], roles_list[i])
-
+    add_game_session(message.chat.id, roles_user)
     await message.answer(f"В данной игре участвуют: {', '.join(players_name)}\n"
                          f"...")
