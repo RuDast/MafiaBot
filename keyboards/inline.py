@@ -1,6 +1,11 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import json
 
-start_menu = InlineKeyboardMarkup(inline_keyboard=[
+
+with open("config.json") as file:
+    config = json.load(file)
+
+start_kb = InlineKeyboardMarkup(inline_keyboard=[
     [
         InlineKeyboardButton(text="🫂 Роли", callback_data='roles_cb'),
     ],
@@ -11,7 +16,7 @@ start_menu = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
-def game_start_menu(game_id: int) -> InlineKeyboardMarkup:
+def game_start_kb(game_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="Присоединиться", callback_data=f"invite_cb-{game_id}"),
@@ -19,5 +24,14 @@ def game_start_menu(game_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="Начать игру", callback_data=f"game_start_cb-{game_id}")
+        ]
+    ])
+
+def roles_pagination_kb(index: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="◀️Назад", callback_data=f"role_{(index - 1) % config["MAX_ROLES_COUNT"]}"),
+            InlineKeyboardButton(text="🏠", callback_data=f"home_cb"),
+            InlineKeyboardButton(text="Далее▶️", callback_data=f"role_{(index + 1) % config["MAX_ROLES_COUNT"]}")
         ]
     ])

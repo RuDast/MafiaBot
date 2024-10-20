@@ -22,7 +22,7 @@ async def start_game_command(message: Message) -> None:
     game = Game(admin)
 
     pic = FSInputFile("images/italian-american-mafia.jpg")
-    await message.answer_photo(pic, start_game_message(admin, game), reply_markup=inline.game_start_menu(game.id))
+    await message.answer_photo(pic, start_game_message(admin, game), reply_markup=inline.game_start_kb(game.id))
 
 
 @user_group_router.callback_query(F.data.startswith('invite_cb'))
@@ -38,7 +38,7 @@ async def invite_cb(callback: CallbackQuery) -> None:
     admin = game.admin
     await callback.answer()
     await callback.message.edit_caption(caption=start_game_message(admin, game),
-                                        reply_markup=inline.game_start_menu(game.id))
+                                        reply_markup=inline.game_start_kb(game.id))
 
 
 @user_group_router.callback_query(F.data.startswith('leave_cb'))
@@ -55,7 +55,7 @@ async def leave_cb(callback: CallbackQuery) -> None:
     admin = game.admin
     await callback.answer()
     await callback.message.edit_caption(caption=start_game_message(admin, game),
-                                        reply_markup=inline.game_start_menu(game.id))
+                                        reply_markup=inline.game_start_kb(game.id))
 
 
 @user_group_router.callback_query(F.data.startswith('game_start_cb'))
