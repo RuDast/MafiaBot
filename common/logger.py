@@ -26,3 +26,8 @@ async def notify_new_user(message: Message) -> None:
     await log_to_admins(message.bot, "👤 Зарегистрирован новый пользователь "
                                      f"(<a href='tg://user?id={message.from_user.id}'>{message.from_user.full_name}</a> "
                                      f"(link: @{message.from_user.username}) #{message.from_user.id})", False)
+
+
+def notify_new_session_game(game_session, chat_id) -> None:
+    logger.info(f"Создана новая игра в чате {chat_id}: "
+                f"{str(game_session)}")

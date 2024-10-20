@@ -3,6 +3,8 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command
 from aiogram import F
 
+from common.config import get_roles_list
+from database.database import check_members, add_game_session
 from classes.game_class import Game
 from classes.member_class import Member
 from database.database import check_members, add_new_game
@@ -92,6 +94,15 @@ async def get_game_members(message: Message) -> list[Member]:
         except Exception as error:
             print(f"Error:\n{error}")
 
+    roles_list = get_roles_list(max(5, len(players_id)))
+    shuffle(roles_list)
+    roles_user = dict()
+    for i in range(len(players_id)):
+        roles_user[players_id[i]] = roles_list[i]
+        await message.bot.send_message(players_id[i], roles_list[i])
+    add_game_session(message.chat.id, roles_user)
+    await message.answer(f"В данной игре участвуют: {', '.join(players_name)}\n"
+                         f"...")
     return players
 
 # def get_roles_from_users(message: Message, players: list[Member]):
