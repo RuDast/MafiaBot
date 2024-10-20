@@ -1,9 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import json
 
-
-with open("config.json") as file:
-    config = json.load(file)
+from data.config import config
 
 start_kb = InlineKeyboardMarkup(inline_keyboard=[
     [
