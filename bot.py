@@ -1,17 +1,17 @@
 import asyncio
 import os
+from dotenv import find_dotenv, load_dotenv
+from loguru import logger
+import json
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats
 from aiogram.utils.token import TokenValidationError
-from dotenv import find_dotenv, load_dotenv
-from loguru import logger
 
-from common import config
 from common.logger import log_to_admins
-from handlers.private_router import user_private_router
+from handlers.private_router import user_private_router, config
 from handlers.group_router import user_group_router
 from common.bot_commands import private_commands, group_commands
 from middlewares.antiflood import AntiFloodMiddleware
@@ -21,11 +21,16 @@ async def on_startup(bot: Bot) -> None:
     print('starting bot...')
     # await log_to_admins(bot, "bot start by floppa")
 
+
 async def on_shutdown(bot: Bot) -> None:
     print('ending bot...')
     # await log_to_admins(bot, "bot end by floppa")
 
+
 async def main() -> None:
+    with open("config.json") as file:
+        config = json.load(file)
+
     load_dotenv(find_dotenv())
     try:
         bot = Bot(token=os.getenv('TOKEN'), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -34,7 +39,7 @@ async def main() -> None:
         return
     dp = Dispatcher(bot=bot)
 
-    dp.message.middleware(AntiFloodMiddleware(config.ANTIFLOOD_DELAY))
+    dp.message.middleware(AntiFloodMiddleware(config["ANTIFLOOD_DELAY"]))
 
     dp.include_router(user_private_router)
     dp.include_router(user_group_router)
