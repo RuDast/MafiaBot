@@ -1,12 +1,15 @@
+from random import shuffle
+
 from aiogram import Router
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.types import Message, CallbackQuery, FSInputFile, ReplyKeyboardRemove
 from aiogram.filters import Command
 from aiogram import F
 
 from database.database import check_members, add_game_session
-from classes.game_class import Game
+from classes.game_class import Game, GameState
 from classes.member_class import Member
 from keyboards import inline
+from data.roles import roles_list
 
 user_group_router = Router()
 user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group", "supergroup"]))
@@ -64,9 +67,22 @@ async def game_start_cb(callback: CallbackQuery) -> None:
     if admin.id != callback.from_user.id:
         await callback.answer("Вы не создатель игры")
         return
+    if game.players_count < 2:
+        await callback.answer(f"Минимальное количество игроков должно составлять 5. Вам не хватает {5-game.players_count} игроков")
+        return
+
     await callback.answer()
-    await callback.message.edit_caption(caption=str(game))
+
+    session_roles = roles_list[:game.players_count]
+    shuffle(session_roles)
+    for number in range(game.players_count):
+        game.players[number].role = session_roles[number]
+        await callback.bot.send_message(chat_id=game.players[number].id, text=game.players[number].role.name)
+
+    game.state = GameState.started
     add_game_session(game)
+    await callback.message.edit_caption(caption=game_started_message(game))
+
 
 
 def start_game_message(admin: Member, game: Game):
@@ -77,6 +93,14 @@ def start_game_message(admin: Member, game: Game):
             f"\n"
             f"\n"
             f"Если вы хотите учавствовать, нажмите на кнопку ниже")
+
+
+def game_started_message(game: Game):
+    return (f"Игра №{game.id} начинается\n\n"
+            f"Игроки:\n"
+            f"{'\n'.join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}"
+            f"\n\n"
+            f"Город засыпает...")
 
 
 async def get_game_members(message: Message) -> list[Member]:
@@ -92,22 +116,6 @@ async def get_game_members(message: Message) -> list[Member]:
         except Exception as error:
             print(f"Error:\n{error}")
 
-    # roles_list = get_roles_list(max(5, len(players_id)))
-    # shuffle(roles_list)
-    # roles_user = dict()
-    # for i in range(len(players_id)):
-    #     roles_user[players_id[i]] = roles_list[i]
-    #     await message.bot.send_message(players_id[i], roles_list[i])
-    # add_game_session(message.chat.id, roles_user)
-    # await message.answer(f"В данной игре участвуют: {', '.join(players_name)}\n"
-    #                      f"...")
-    # return players
 
-# def get_roles_from_users(message: Message, players: list[Member]):
-#     roles_list = get_roles_list(max(config.MIN_PLAYERS_COUNT, len(players)))
-#     shuffle(roles_list)
-#
-#     for i in range(len(players)):
-#         players[i].role = roles_list[i]
-#
-#     return players
+
+

@@ -38,7 +38,7 @@ class Game:
                 f'---\n'
                 f'Admin: {self.admin.name} #{self.admin.id}\n'
                 f'Players:'
-                f'\n')+ '\n'.join(f'{player.name} #{player.id}' for player in self.players)
+                f'\n')+ '\n'.join(f'{player.name} #{player.id} - {player.role.name}'  for player in self.players)
 
     def __dict__(self):
         return {"id": self.id,
