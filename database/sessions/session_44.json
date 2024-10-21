@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"id": 44, "state": "Waiting", "admin": 2023511458, "players_count": 1, "players": [{"id": 2023511458, "role": -1, "is_alive": true}]}
+=======
+{"id": 44, "state": "Waiting", "admin": 7033965437, "players_count": 1, "players": []}
+>>>>>>> origin/isma
