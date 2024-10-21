@@ -3,11 +3,9 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command
 from aiogram import F
 
-from common.config import get_roles_list
 from database.database import check_members, add_game_session
 from classes.game_class import Game
 from classes.member_class import Member
-from database.database import check_members, add_new_game
 from keyboards import inline
 
 user_group_router = Router()
@@ -22,7 +20,7 @@ async def start_game_command(message: Message) -> None:
     game = Game(admin)
 
     pic = FSInputFile("images/italian-american-mafia.jpg")
-    await message.answer_photo(pic, start_game_message(admin, game), reply_markup=inline.game_start_menu(game.id))
+    await message.answer_photo(pic, start_game_message(admin, game), reply_markup=inline.game_start_kb(game.id))
 
 
 @user_group_router.callback_query(F.data.startswith('invite_cb'))
@@ -38,7 +36,7 @@ async def invite_cb(callback: CallbackQuery) -> None:
     admin = game.admin
     await callback.answer()
     await callback.message.edit_caption(caption=start_game_message(admin, game),
-                                        reply_markup=inline.game_start_menu(game.id))
+                                        reply_markup=inline.game_start_kb(game.id))
 
 
 @user_group_router.callback_query(F.data.startswith('leave_cb'))
@@ -55,7 +53,7 @@ async def leave_cb(callback: CallbackQuery) -> None:
     admin = game.admin
     await callback.answer()
     await callback.message.edit_caption(caption=start_game_message(admin, game),
-                                        reply_markup=inline.game_start_menu(game.id))
+                                        reply_markup=inline.game_start_kb(game.id))
 
 
 @user_group_router.callback_query(F.data.startswith('game_start_cb'))
@@ -68,7 +66,7 @@ async def game_start_cb(callback: CallbackQuery) -> None:
         return
     await callback.answer()
     await callback.message.edit_caption(caption=str(game))
-    add_new_game(game)
+    add_game_session(game)
 
 
 def start_game_message(admin: Member, game: Game):
@@ -94,16 +92,16 @@ async def get_game_members(message: Message) -> list[Member]:
         except Exception as error:
             print(f"Error:\n{error}")
 
-    roles_list = get_roles_list(max(5, len(players_id)))
-    shuffle(roles_list)
-    roles_user = dict()
-    for i in range(len(players_id)):
-        roles_user[players_id[i]] = roles_list[i]
-        await message.bot.send_message(players_id[i], roles_list[i])
-    add_game_session(message.chat.id, roles_user)
-    await message.answer(f"В данной игре участвуют: {', '.join(players_name)}\n"
-                         f"...")
-    return players
+    # roles_list = get_roles_list(max(5, len(players_id)))
+    # shuffle(roles_list)
+    # roles_user = dict()
+    # for i in range(len(players_id)):
+    #     roles_user[players_id[i]] = roles_list[i]
+    #     await message.bot.send_message(players_id[i], roles_list[i])
+    # add_game_session(message.chat.id, roles_user)
+    # await message.answer(f"В данной игре участвуют: {', '.join(players_name)}\n"
+    #                      f"...")
+    # return players
 
 # def get_roles_from_users(message: Message, players: list[Member]):
 #     roles_list = get_roles_list(max(config.MIN_PLAYERS_COUNT, len(players)))
