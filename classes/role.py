@@ -8,3 +8,7 @@ class Role:
     name: str = ""
     description: str = ""
     photo: FSInputFile = None
+
+    def format_message(self):
+        return (f"<b>{self.name}</b>\n\n"
+                f"{self.description}")

@@ -1,26 +1,30 @@
+from asyncio import sleep
 from random import shuffle
 
-from aiogram import Router
+from aiogram import Router, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command
 from aiogram import F
 
-from database.database import add_game_session
-from classes.game_class import Game, GameState
-from classes.member_class import Member
+from classes.game import Game, GameState
+from classes.player import Player
 from keyboards import inline
 from data.roles import roles_list
+from keyboards.inline import choose_mafia_victim_kb, choose_don_check, choose_sheriff_check, choose_lawyer_def, \
+    choose_doctor_def, choose_prostitute_sleep
 
 user_group_router = Router()
 user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group", "supergroup"]))
 
 
 @user_group_router.message(Command("start_game"))
-async def start_game_command(message: Message) -> None:
+async def start_game_command(message: Message, bot: Bot) -> None:
     await message.delete()
 
-    admin = Member((await message.bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)).user)
-    game = Game(admin)
+    game = Game(bot, message.chat.id)
+    admin = Player((await message.bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)).user,
+                   game.id)
+    await game.appoint_admin(admin)
 
     pic = FSInputFile("images/italian-american-mafia.jpg")
     await message.answer_photo(pic, start_game_message(admin, game), reply_markup=inline.game_start_kb(game.id))
@@ -29,10 +33,15 @@ async def start_game_command(message: Message) -> None:
 @user_group_router.callback_query(F.data.startswith('invite_cb'))
 async def invite_cb(callback: CallbackQuery) -> None:
     game_id = int(callback.data.replace('invite_cb-', ''))
-    game = Game.get_by_id(game_id)
-    cur_user = Member((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
-                                                          user_id=callback.from_user.id)).user)
-    if not game.add_member(cur_user):
+    try:
+        game = Game.get_by_id(game_id)
+        cur_user = Player((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
+                                                              user_id=callback.from_user.id)).user, game_id)
+    except IndexError:
+        await callback.answer("Ошибка")
+        return
+
+    if not await game.add_player(cur_user, callback):
         await callback.answer("Ошибка")
         return
 
@@ -45,11 +54,15 @@ async def invite_cb(callback: CallbackQuery) -> None:
 @user_group_router.callback_query(F.data.startswith('leave_cb'))
 async def leave_cb(callback: CallbackQuery) -> None:
     game_id = int(callback.data.replace('leave_cb-', ''))
-    game = Game.get_by_id(game_id)
-    cur_user = Member((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
-                                                          user_id=callback.from_user.id)).user)
+    try:
+        game = Game.get_by_id(game_id)
+        cur_user = Player((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
+                                                              user_id=callback.from_user.id)).user, game_id)
+    except IndexError:
+        await callback.answer("Ошибка")
+        return
 
-    if not game.delete_member(cur_user):
+    if not game.remove_player(cur_user):
         await callback.answer("Ошибка")
         return
 
@@ -67,28 +80,87 @@ async def game_start_cb(callback: CallbackQuery) -> None:
     if admin.id != callback.from_user.id:
         await callback.answer("Вы не создатель игры")
         return
-    if game.players_count < 1:
+    if len(game.players) < 1:  # TODO config['MIN_PLAYERS']
         await callback.answer(
-            f"Минимальное количество игроков должно составлять 5. Вам не хватает {5 - game.players_count} игроков")
+            f"Минимальное количество игроков должно составлять 5. Вам не хватает {5 - len(game.players)} игроков")
         return
 
-    await callback.answer()
-
-    session_roles = roles_list[:game.players_count]
+    session_roles = roles_list[:len(game.players)]
     shuffle(session_roles)
-    for number in range(game.players_count):
-        game.players[number].role = session_roles[number]
-        await callback.bot.send_photo(chat_id=game.players[number].id,
-                                      photo=game.players[number].role.photo,
-                                      caption=f"Твоя роль в игре - <b>{game.players[number].role.name}</b>\n\n"
-                                              f"{game.players[number].role.description}")
 
-    game.state = GameState.started
-    add_game_session(game)
+    for i in range(len(game.players)):
+        game.players[i].role = session_roles[i]
+        await callback.bot.send_photo(chat_id=game.players[i].id,
+                                      photo=game.players[i].role.photo,
+                                      caption=f"Твоя роль в игре - {game.players[i].role.format_message()}")
+
+    await game.start()
+
+    await night(callback, game)
+
+    await callback.answer()
     await callback.message.edit_caption(caption=game_started_message(game))
 
 
-def start_game_message(admin: Member, game: Game):
+async def night(callback: CallbackQuery, game: Game):
+    for player in game.players:
+        if player.role.id == 0:  # MAFIA
+            message = ""
+            mafia = [i for i in game.players if i.role.id == 0 and i.is_alive]
+            if len(mafia) > 1:
+                other_mafia = ', '.join(
+                    [f'<a href="tg://user?id={i.id}">'
+                     f'{'🐺' if i.role.id == 3 else '⚖️' if i.role.id == 5 else ''}{i.name}'
+                     f'</a>'
+                     for i in game.players if i.role.id == 0 and i.is_alive and i != player])
+                message += f"Ваши союзники: {other_mafia}\n"
+            message += "Выберите жертву:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_mafia_victim_kb(game))
+
+        if player.role.id == 2:  # PROSTITUTE
+            message = "Выберите игрока, с которым хотите переспать:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_prostitute_sleep(game))
+
+        if player.role.id == 3:  # DON
+            message = ""
+            mafia = [i for i in game.players if i.role.id == 0 and i.is_alive]
+            if len(mafia) > 1:
+                other_mafia = ', '.join(
+                    [f'<a href="tg://user?id={i.id}">'
+                     f'{'🐺' if i.role.id == 3 else '⚖️' if i.role.id == 5 else ''}{i.name}'
+                     f'</a>'
+                     for i in game.players if i.role.id in [0, 3, 5] and i.is_alive and i != player])
+                message += f"Ваши союзники: {other_mafia}\n"
+            message += "Выберите жертву:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_mafia_victim_kb(game))
+
+            message = "Выберите игрока, которого вы хотите проверить:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_don_check(game))
+
+        if player.role.id == 4:  # SHERIFF
+            message = "Выберите игрока, которого вы хотите проверить:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_sheriff_check(game))
+
+        if player.role.id == 5:  # LAWYER
+            message = "Выберите игрока, которого вы хотите защитить:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_lawyer_def(game))
+
+        if player.role.id == 6:  # DOCTOR
+            message = "Выберите игрока, которого вы хотите защитить:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_doctor_def(game))
+
+        if player.role.id == 7:  # MANIAC
+            message = "Выберите игрока, вы хотите убить:"
+            await callback.bot.send_message(player.id, message, reply_markup=choose_maniac_victim(game))
+
+        if player.role.id == 8:  # SERGEANT
+            sheriffs = [i for i in game.players if i.role.id == 4 and i.is_alive]
+            if len(sheriffs) == 0:
+                message = "Выберите игрока, которого вы хотите защитить:"
+                await callback.bot.send_message(player.id, message, reply_markup=choose_sheriff_check(game))
+
+
+def start_game_message(admin: Player, game: Game):
     return (f"{admin.name} открыл набор в мафию\n"
             f"\n"
             f"Играют:\n"
@@ -102,6 +174,6 @@ def game_started_message(game: Game):
     return (f"Игра №{game.id} начинается\n\n"
             f"Игроки:\n"
             f"{'\n'.join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}"
-            f"\n\n"
-            f"Роли были распредены. "
-            f"Город засыпает...")
+            f"\n"
+            f"\n"
+            f"Роли были распределены. Город засыпает...")
