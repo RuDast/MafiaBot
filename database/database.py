@@ -5,7 +5,7 @@ from aiogram.types import Message
 from utils.logger import notify_new_user
 
 
-async def add_new_member(message: Message):
+async def add_new_user(message: Message):
     with open("database/users.json") as file:
         users = json.load(file)["users"]
     if message.from_user.id not in users:
@@ -15,17 +15,12 @@ async def add_new_member(message: Message):
         await notify_new_user(message)
 
 
-def check_members():
+def check_users():
     with open("database/users.json") as file:
         users = json.load(file)["users"]
     return users
 
 
-def is_member_in_db(user_id: int) -> bool:
-    users = check_members()
+def is_user_in_db(user_id: int) -> bool:
+    users = check_users()
     return user_id in users
-
-
-def add_game_session(game):
-    with open(f"database/sessions/session_{game.id}.json", encoding="utf-8", mode="w") as file:
-        json.dump(game.__dict__(), file)
