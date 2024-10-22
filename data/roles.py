@@ -3,7 +3,7 @@ from aiogram.types import FSInputFile
 from classes.role_class import Role
 import json
 
-with open("roles.json", encoding="utf-8") as file:
+with open("data/roles.json", encoding="utf-8") as file:
     roles_data = json.load(file)
 
 civilian = Role(id=roles_data["civilian"]["id"],
@@ -58,5 +58,6 @@ kamikaze = Role(id=roles_data["kamikaze"]["id"],
                 description=roles_data["kamikaze"]["description"],
                 photo=FSInputFile(roles_data["kamikaze"]["photo"]))
 
+roles_index_list = [mafia, civilian, prostitute, don, sheriff, lawyer, doctor, maniac, sergeant, kamikaze]
 roles_list = [civilian, civilian, civilian, mafia, sheriff, prostitute, mafia, civilian, doctor, maniac, civilian,
               mafia, civilian, don, civilian, mafia, sergeant, lawyer, civilian, mafia]

@@ -20,6 +20,7 @@ def check_members():
         users = json.load(file)["users"]
     return users
 
+
 def is_member_in_db(user_id: int) -> bool:
     users = check_members()
     return user_id in users

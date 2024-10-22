@@ -24,6 +24,7 @@ def game_start_kb(game_id: int) -> InlineKeyboardMarkup:
         ]
     ])
 
+
 def roles_pagination_kb(index: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [

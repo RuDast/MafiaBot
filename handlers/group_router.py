@@ -1,11 +1,11 @@
 from random import shuffle
 
 from aiogram import Router
-from aiogram.types import Message, CallbackQuery, FSInputFile, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command
 from aiogram import F
 
-from database.database import check_members, add_game_session
+from database.database import add_game_session
 from classes.game_class import Game, GameState
 from classes.member_class import Member
 from keyboards import inline
@@ -67,8 +67,9 @@ async def game_start_cb(callback: CallbackQuery) -> None:
     if admin.id != callback.from_user.id:
         await callback.answer("Вы не создатель игры")
         return
-    if game.players_count < 2:
-        await callback.answer(f"Минимальное количество игроков должно составлять 5. Вам не хватает {5-game.players_count} игроков")
+    if game.players_count < 1:
+        await callback.answer(
+            f"Минимальное количество игроков должно составлять 5. Вам не хватает {5 - game.players_count} игроков")
         return
 
     await callback.answer()
@@ -77,12 +78,14 @@ async def game_start_cb(callback: CallbackQuery) -> None:
     shuffle(session_roles)
     for number in range(game.players_count):
         game.players[number].role = session_roles[number]
-        await callback.bot.send_message(chat_id=game.players[number].id, text=game.players[number].role.name)
+        await callback.bot.send_photo(chat_id=game.players[number].id,
+                                      photo=game.players[number].role.photo,
+                                      caption=f"Твоя роль в игре - <b>{game.players[number].role.name}</b>\n\n"
+                                              f"{game.players[number].role.description}")
 
     game.state = GameState.started
     add_game_session(game)
     await callback.message.edit_caption(caption=game_started_message(game))
-
 
 
 def start_game_message(admin: Member, game: Game):
@@ -100,22 +103,5 @@ def game_started_message(game: Game):
             f"Игроки:\n"
             f"{'\n'.join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}"
             f"\n\n"
+            f"Роли были распредены. "
             f"Город засыпает...")
-
-
-async def get_game_members(message: Message) -> list[Member]:
-    members = check_members()
-    players = []
-    for member_id in members:
-        try:
-            user = await message.bot.get_chat_member(chat_id=message.chat.id, user_id=member_id)
-            if user.status in ['left', 'restricted', 'kicked']:
-                continue
-            if user not in players:
-                players.append(Member(user.user))
-        except Exception as error:
-            print(f"Error:\n{error}")
-
-
-
-
