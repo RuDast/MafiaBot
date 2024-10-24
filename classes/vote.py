@@ -21,7 +21,7 @@ class NightVote(Vote):
         self.prostitute_sleep: Player | None = None
         self.maniac_victim: Player | None = None
 
-    def get_votes_count(self) -> int:
+    def get_max_votes_count(self) -> int:
         count = 0
         for player in self._game.players:
             if player.role.id in self.active_roles:
@@ -30,6 +30,14 @@ class NightVote(Vote):
                     if len(sheriffs) != 0:
                         continue
             count += 1
+        return count
+
+    def get_votes_count(self) -> int:
+        count = 0
+        for player in self._game.players:
+            if player.role.id == 0:
+                pass
+        # TODO доделать
         return count
 
     def mafia_vote(self, victim: Player) -> None:

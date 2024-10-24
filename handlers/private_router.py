@@ -63,6 +63,10 @@ async def mafia_vote_callback(callback: CallbackQuery):
     vote: NightVote = game.get_last_vote()
     vote.mafia_vote(player)
 
+    # TODO если равны кол-во голосов и макс кол-во голосов, не ждать таймер
+    # vote.get_votes_count() == vote.get_max_votes_count():
+    # skip_waiting()
+
     await callback.answer("🆗")
     await callback.message.answer(f"Ваш голос в {player.name} успешно отдан.")
 
