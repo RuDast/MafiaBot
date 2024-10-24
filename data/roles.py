@@ -57,8 +57,8 @@ kamikaze = Role(id=roles_data["kamikaze"]["id"],
                 photo=FSInputFile(roles_data["kamikaze"]["photo"]))
 
 roles_index_list = [mafia, civilian, prostitute, don, sheriff, lawyer, doctor, maniac, sergeant, kamikaze]
-#roles_list = [mafia, sheriff, civilian, civilian, civilian, prostitute, mafia, civilian, doctor, maniac, civilian,
+# roles_list = [mafia, sheriff, civilian, civilian, civilian, prostitute, mafia, civilian, doctor, maniac, civilian,
 #              mafia, civilian, don, civilian, mafia, sergeant, lawyer, civilian, mafia]
 
-roles_list = [don, mafia, civilian, civilian, civilian, prostitute, mafia, civilian, doctor, maniac, civilian,
+roles_list = [don, sheriff, prostitute, mafia, doctor, civilian, civilian, civilian, prostitute, mafia, civilian, doctor, maniac, civilian,
               mafia, civilian, don, civilian, mafia, sergeant, lawyer, civilian, mafia]

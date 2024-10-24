@@ -57,12 +57,35 @@ class Game:
                 return True
         return False
 
-    def create_night_vote(self) -> Vote:
-        self._votes.append(NightVote(self))
-        return self._votes[-1]
+    @staticmethod
+    def kill_player(player: Player):
+        player.is_alive = False
 
-    def get_last_vote(self) -> Vote:
-        return self._votes[-1]
+
+    def create_night_vote(self) -> Vote:
+        new_vote = NightVote(self)
+        self._votes.append(new_vote)
+        return new_vote
+
+    def get_prev_night_vote(self, num: int) -> NightVote | None:
+        ctr = 0
+        for vote in self._votes[::-1]:
+            if isinstance(vote, NightVote):
+                ctr += 1
+                if ctr == num:
+                    return vote
+        return None
+
+
+    async def goto_morning(self, callback: CallbackQuery):
+        vote = self.get_prev_night_vote(1)
+        killed_people = await vote.night_analyse()
+        self.state = GameState.day
+
+        await callback.message.answer(f'Убиты: {", ".join([f"{victim.name}" for victim in killed_people])}')
+
+
+
 
     def dump_session(self):
         with open(f"database/sessions/session_{self.id}.json", encoding="utf-8", mode="w") as file:
