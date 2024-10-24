@@ -19,5 +19,5 @@ class Player:
                 "is_alive": self.is_alive}
 
     @classmethod
-    def get(cls, inst_id: int, game_id: int):
-        return [inst for inst in cls.instances if inst.id == inst_id and inst.game_id == game_id][0]
+    def get(cls, player_id: int, game_id: int):
+        return [inst for inst in cls.instances if inst.id == player_id and inst.game_id == game_id][0]

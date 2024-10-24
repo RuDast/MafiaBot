@@ -3,10 +3,13 @@ from aiogram.types import Message, FSInputFile, CallbackQuery, InputMediaPhoto
 from aiogram.filters import CommandStart
 from aiogram import F
 
+from classes.game import Game
+from classes.player import Player
+from classes.vote import NightVote
 from database.database import add_new_user
 from keyboards import inline
 from data.config import messages
-from data.roles import Role, roles_index_list
+from data.roles import roles_index_list
 
 user_private_router = Router()
 user_private_router.message.filter(F.chat.func(lambda chat: chat.type == "private"))
@@ -50,7 +53,23 @@ async def start_callback(callback: CallbackQuery):
                                                             caption=messages["START_MESSAGE"]),
                                       reply_markup=inline.start_kb)
 
+# VOTES BELOW
+@user_private_router.callback_query(F.data.startswith("mafia_victim-"))
+async def mafia_vote_callback(callback: CallbackQuery):
+    data = callback.data.replace("mafia_victim-", "").split('-')
+    game = Game.find_by_id(int(data[0]))
+    player = Player.get(int(data[1]), int(data[0]))
+
+    vote: NightVote = game.get_last_vote()
+    vote.mafia_vote(player)
+
+    await callback.answer("🆗")
+    await callback.message.answer(f"Ваш голос в {player.name} успешно отдан.")
+
+# и так далее
 
 @user_private_router.message()
 async def unknown_message(message: Message) -> None:
     await message.delete()
+
+

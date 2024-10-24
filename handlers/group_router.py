@@ -11,7 +11,7 @@ from classes.player import Player
 from keyboards import inline
 from data.roles import roles_list
 from keyboards.inline import choose_mafia_victim_kb, choose_don_check, choose_sheriff_check, choose_lawyer_def, \
-    choose_doctor_def, choose_prostitute_sleep
+    choose_doctor_def, choose_prostitute_sleep, choose_maniac_victim
 
 user_group_router = Router()
 user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group", "supergroup"]))
@@ -34,7 +34,7 @@ async def start_game_command(message: Message, bot: Bot) -> None:
 async def invite_cb(callback: CallbackQuery) -> None:
     game_id = int(callback.data.replace('invite_cb-', ''))
     try:
-        game = Game.get_by_id(game_id)
+        game = Game.find_by_id(game_id)
         cur_user = Player((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
                                                               user_id=callback.from_user.id)).user, game_id)
     except IndexError:
@@ -55,7 +55,7 @@ async def invite_cb(callback: CallbackQuery) -> None:
 async def leave_cb(callback: CallbackQuery) -> None:
     game_id = int(callback.data.replace('leave_cb-', ''))
     try:
-        game = Game.get_by_id(game_id)
+        game = Game.find_by_id(game_id)
         cur_user = Player((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
                                                               user_id=callback.from_user.id)).user, game_id)
     except IndexError:
@@ -75,7 +75,7 @@ async def leave_cb(callback: CallbackQuery) -> None:
 @user_group_router.callback_query(F.data.startswith('game_start_cb'))
 async def game_start_cb(callback: CallbackQuery) -> None:
     game_id = int(callback.data.replace('game_start_cb-', ''))
-    game = Game.get_by_id(game_id)
+    game = Game.find_by_id(game_id)
     admin = game.admin
     if admin.id != callback.from_user.id:
         await callback.answer("Вы не создатель игры")
@@ -103,6 +103,8 @@ async def game_start_cb(callback: CallbackQuery) -> None:
 
 
 async def night(callback: CallbackQuery, game: Game):
+    game.create_night_vote()
+
     for player in game.players:
         if player.role.id == 0:  # MAFIA
             message = ""
