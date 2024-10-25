@@ -9,7 +9,7 @@ from aiogram import F
 from classes.game import Game, GameState
 from classes.player import Player
 from keyboards import inline
-from data.roles import roles_list
+from data.roles import roles_list, mafia, lawyer, don
 from keyboards.inline import choose_mafia_victim_kb, choose_don_check, choose_sheriff_check, choose_lawyer_def, \
     choose_doctor_heal, choose_prostitute_sleep, choose_maniac_victim, day_vote_kb
 
@@ -107,6 +107,8 @@ async def game_start_cb(callback: CallbackQuery) -> None:
 
 
 async def night(callback: CallbackQuery, game: Game):
+
+    print("night")
     game.create_night_vote()
 
     for player in game.players:
@@ -154,28 +156,31 @@ async def night(callback: CallbackQuery, game: Game):
                 await callback.bot.send_message(player.id, message, reply_markup=choose_sheriff_check(game))
 
     await game.goto_morning(callback)
+
     if game.mafia_team_count() >= game.civilian_team_count():
         game.state = GameState.ended
-        await callback.message.answer("mafia win")
+        await callback.message.answer(f"Мафия победила!\n\nВеликие мафиози: "
+                                      f"{', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
+        game.instances.remove(game)
     else:
         await day(callback=callback, game=game)
 
 
 async def day(callback: CallbackQuery, game: Game):
     game.create_day_vote()
+    print("day")
     for player in game.players:
         if not player.is_alive:
             continue
-        await callback.bot.send_message(chat_id=player.id, text="Vote", reply_markup=day_vote_kb(game, player))
+        await callback.bot.send_message(chat_id=player.id, text="Дневное голосование\nВыберите игрока, которого хотите исключить", reply_markup=day_vote_kb(game, player))
 
     if game.mafia_team_count() == 0:
         game.state = GameState.ended
-        await callback.message.answer("civilian win")
+        await callback.message.answer(f"Мирные жители выиграли!\n\nМафией были: "
+                                      f"{', '.join([f'{player.name}' for player in game.players if player.role in 
+                                                    [mafia, don, lawyer]])}")
+        game.instances.remove(game)
     await game.goto_night(callback=callback)
-
-
-
-
 
 
 def start_game_message(admin: Player, game: Game):

@@ -58,6 +58,8 @@ async def start_callback(callback: CallbackQuery):
 async def mafia_vote_callback(callback: CallbackQuery):
     data = callback.data.replace("mafia_victim-", "").split('-')
     game = Game.find_by_id(int(data[0]))
+    if game is None:
+        return
     victim = Player.get(int(data[1]), int(data[0]))
     mafia = Player.get(int(data[2]), int(data[0]))
 
@@ -77,6 +79,8 @@ async def mafia_vote_callback(callback: CallbackQuery):
 async def don_check_callback(callback: CallbackQuery):
     data = callback.data.replace("don_check-", "").split('-')
     game = Game.find_by_id(int(data[0]))
+    if game is None:
+        return
     player = Player.get(player_id=int(data[1]), game_id=int(game.id))
 
     vote: NightVote = game.get_prev_night_vote(1)
@@ -94,6 +98,8 @@ async def don_check_callback(callback: CallbackQuery):
 async def shreriff_check_callback(callback: CallbackQuery) -> None:
     data = callback.data.replace("sheriff_check-", "").split('-')
     game = Game.find_by_id(int(data[0]))
+    if game is None:
+        return
     player = Player.get(player_id=int(data[1]), game_id=int(game.id))
 
     vote: NightVote = game.get_prev_night_vote(1)
@@ -110,6 +116,8 @@ async def shreriff_check_callback(callback: CallbackQuery) -> None:
 async def doctor_heal_callback(callback: CallbackQuery) -> None:
     data = callback.data.replace("doctor_heal-", "").split('-')
     game = Game.find_by_id(int(data[0]))
+    if game is None:
+        return
     player = Player.get(player_id=int(data[1]), game_id=int(game.id))
 
     vote: NightVote = game.get_prev_night_vote(1)
@@ -122,6 +130,8 @@ async def doctor_heal_callback(callback: CallbackQuery) -> None:
 async def prostitute_sleep_callback(callback: CallbackQuery) -> None:
     data = callback.data.replace("prostitute_sleep-", "").split('-')
     game = Game.find_by_id(int(data[0]))
+    if game is None:
+        return
     player = Player.get(player_id=int(data[1]), game_id=int(game.id))
 
     vote: NightVote = game.get_prev_night_vote(1)
@@ -134,6 +144,8 @@ async def prostitute_sleep_callback(callback: CallbackQuery) -> None:
 async def player_day_vote_callback(callback: CallbackQuery) -> None:
     data = callback.data.replace("player-", "").split('-')
     game = Game.find_by_id(int(data[0]))
+    if game is None:
+        return
     selected_player = Player.get(player_id=int(data[1]), game_id=int(game.id))
     voted_player = Player.get(player_id=int(data[2]), game_id=int(game.id))
 

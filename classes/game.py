@@ -100,6 +100,8 @@ class Game:
             player.is_alive = False
         if len(killed_people) != 0:
             await callback.message.answer(f'Город просыпается.\nК сожалению этой ночью были убиты: \n{", ".join([f"{victim.name}" for victim in killed_people])}')
+        else:
+            await callback.message.answer(f'Город просыпается.\nУдивительно, но все остались живы')
 
     async def goto_night(self, callback: CallbackQuery):
         vote = self.get_prev_day_vote(1)
@@ -113,14 +115,14 @@ class Game:
     def mafia_team_count(self) -> int:
         count = 0
         for player in self.players:
-            if player.role in [don, mafia, lawyer]:
+            if player.role in [don, mafia, lawyer] and player.is_alive:
                 count += 1
         return count
 
     def civilian_team_count(self) -> int:
         count = 0
         for player in self.players:
-            if player.role not in [don, mafia, lawyer]:
+            if player.role not in [don, mafia, lawyer] and player.is_alive:
                 count += 1
         return count
 
@@ -141,7 +143,10 @@ class Game:
 
     @classmethod
     def find_by_id(cls, inst_id: int):
-        return [inst for inst in cls.instances if inst.id == inst_id][0]
+        try:
+            return [inst for inst in cls.instances if inst.id == inst_id][0]
+        except IndexError:
+            return None
 
 
 class GameState(Enum):
