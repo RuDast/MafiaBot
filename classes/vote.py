@@ -33,7 +33,7 @@ class NightVote(Vote):
                 continue
 
             if player.role.id in self.active_roles:
-                if player.role.id == 8: # SERGEANT
+                if player.role.id == 8:  # SERGEANT
                     sheriffs = [i for i in self._game.players if i.role.id == 4 and i.is_alive]
                     if len(sheriffs) != 0:
                         continue
@@ -75,7 +75,31 @@ class NightVote(Vote):
                     self._game.kill_player(self.prostitute_sleep)
                     killed_players.append(self.prostitute_sleep)
         return killed_players
+    
 
 
+class DayVote(Vote):
+    type = "Day"
 
+    def __init__(self, game) -> None:
+        super().__init__(game)
+        self.players_votes: dict[str:Player] = {}
+
+
+    def add_new_vote(self, voted_player: Player, selected_player: Player) -> None:
+        if str(voted_player.id) not in self.players_votes.keys():
+            self.players_votes[str(voted_player.id)] = selected_player
+
+    def get_killed_player(self) -> Player | None:
+        killed_players: list[Player] = []
+        for value in self.players_votes.values():
+            killed_players.append(value)
+        if len(killed_players) == 0:
+            return None
+        return max(killed_players, key=killed_players.count)
+
+    async def day_analyse(self) -> Player:
+        await sleep(config["DAY_TIME"])
+        killed_player = self.get_killed_player()
+        return killed_player
 

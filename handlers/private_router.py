@@ -5,7 +5,7 @@ from aiogram import F
 
 from classes.game import Game
 from classes.player import Player
-from classes.vote import NightVote
+from classes.vote import NightVote, DayVote
 from database.database import add_new_user
 from keyboards import inline
 from data.config import messages
@@ -127,6 +127,20 @@ async def prostitute_sleep_callback(callback: CallbackQuery) -> None:
     vote: NightVote = game.get_prev_night_vote(1)
     vote.prostitute_sleep = player
     await callback.answer(f"Вы провели ночь с {player.name}")
+    await callback.message.delete()
+
+
+@user_private_router.callback_query(F.data.startswith("player-"))
+async def player_day_vote_callback(callback: CallbackQuery) -> None:
+    data = callback.data.replace("player-", "").split('-')
+    game = Game.find_by_id(int(data[0]))
+    selected_player = Player.get(player_id=int(data[1]), game_id=int(game.id))
+    voted_player = Player.get(player_id=int(data[2]), game_id=int(game.id))
+
+    vote: DayVote = game.get_prev_day_vote(1)
+    vote.add_new_vote(voted_player, selected_player)
+
+    await callback.answer(f"Голос за {selected_player.name} успешно отдан")
     await callback.message.delete()
 
 

@@ -95,3 +95,11 @@ def choose_maniac_victim(game: Game):
     for player in game.players:
         kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"maniac_victim-{game.id}-{player.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
+
+def day_vote_kb(game: Game, vote_player: Player):
+    kb = []
+    for player in game.players:
+        if vote_player.id == player.id or not player.is_alive:
+            continue
+        kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"player-{game.id}-{player.id}-{vote_player.id}"))
+    return InlineKeyboardMarkup(inline_keyboard=[kb])
