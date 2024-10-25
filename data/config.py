@@ -20,6 +20,5 @@ class JSONStructure:
     def get(self, item, default=None):
         return self.data.get(item, default)
 
-
 config = JSONStructure(file_path="data/config.json")
 messages = JSONStructure(file_path="data/messages.json")
