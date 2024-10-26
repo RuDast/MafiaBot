@@ -33,7 +33,7 @@ class Game:
 
     async def start(self):
         self.state = GameState.night
-        self.dump_session()
+        # self.dump_session()
         if self._notify_message is not None:
             await self._bot.delete_message(self._chat_id, self._notify_message.message_id)
 
