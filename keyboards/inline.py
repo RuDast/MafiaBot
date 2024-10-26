@@ -31,9 +31,9 @@ def game_start_kb(game_id: int) -> InlineKeyboardMarkup:
 def roles_pagination_kb(index: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="◀️Назад", callback_data=f"role_{(index - 1) % config["MAX_ROLES_COUNT"]}"),
+            InlineKeyboardButton(text="◀️Назад", callback_data=f"role_{(index - 1) % config['MAX_ROLES_COUNT']}"),
             InlineKeyboardButton(text="🏠", callback_data=f"home_cb"),
-            InlineKeyboardButton(text="Далее▶️", callback_data=f"role_{(index + 1) % config["MAX_ROLES_COUNT"]}")
+            InlineKeyboardButton(text="Далее▶️", callback_data=f"role_{(index + 1) % config['MAX_ROLES_COUNT']}")
         ]
     ])
 
