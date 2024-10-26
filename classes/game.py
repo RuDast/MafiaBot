@@ -5,7 +5,8 @@ from aiogram import Bot
 from aiogram.types import CallbackQuery, Message
 
 from classes.player import Player
-from classes.vote import Vote, NightVote
+from classes.vote import Vote, NightVote, DayVote
+from data.roles import mafia, lawyer, don
 from database.database import is_user_in_db
 
 
@@ -57,12 +58,75 @@ class Game:
                 return True
         return False
 
-    def create_night_vote(self) -> Vote:
-        self._votes.append(NightVote(self))
-        return self._votes[-1]
+    @staticmethod
+    def kill_player(player: Player):
+        player.is_alive = False
 
-    def get_last_vote(self) -> Vote:
-        return self._votes[-1]
+
+    def create_night_vote(self) -> Vote:
+        new_vote = NightVote(self)
+        self._votes.append(new_vote)
+        return new_vote
+
+    def create_day_vote(self) -> Vote:
+        new_vote = DayVote(self)
+        self._votes.append(new_vote)
+        return new_vote
+
+    def get_prev_night_vote(self, num: int) -> NightVote | None:
+        ctr = 0
+        for vote in self._votes[::-1]:
+            if isinstance(vote, NightVote):
+                ctr += 1
+                if ctr == num:
+                    return vote
+        return None
+
+    def get_prev_day_vote(self, num: int) -> DayVote | None:
+        ctr = 0
+        for vote in self._votes[::-1]:
+            if isinstance(vote, DayVote):
+                ctr += 1
+                if ctr == num:
+                    return vote
+        return None
+
+
+    async def goto_morning(self, callback: CallbackQuery):
+        vote = self.get_prev_night_vote(1)
+        killed_people = await vote.night_analyse()
+        self.state = GameState.day
+        for player in killed_people:
+            player.is_alive = False
+        if len(killed_people) != 0:
+            await callback.message.answer(f'Город просыпается.\nК сожалению этой ночью были убиты: \n{", ".join([f"{victim.name}" for victim in killed_people])}')
+        else:
+            await callback.message.answer(f'Город просыпается.\nУдивительно, но все остались живы')
+
+    async def goto_night(self, callback: CallbackQuery):
+        vote = self.get_prev_day_vote(1)
+        killed_people = await vote.day_analyse()
+        self.state = GameState.night
+        if killed_people is not None:
+            killed_people.is_alive = False
+
+            await callback.message.answer(f'{killed_people.name} выбыл.')
+
+    def mafia_team_count(self) -> int:
+        count = 0
+        for player in self.players:
+            if player.role in [don, mafia, lawyer] and player.is_alive:
+                count += 1
+        return count
+
+    def civilian_team_count(self) -> int:
+        count = 0
+        for player in self.players:
+            if player.role not in [don, mafia, lawyer] and player.is_alive:
+                count += 1
+        return count
+
+
 
     def dump_session(self):
         with open(f"database/sessions/session_{self.id}.json", encoding="utf-8", mode="w") as file:
@@ -79,7 +143,10 @@ class Game:
 
     @classmethod
     def find_by_id(cls, inst_id: int):
-        return [inst for inst in cls.instances if inst.id == inst_id][0]
+        try:
+            return [inst for inst in cls.instances if inst.id == inst_id][0]
+        except IndexError:
+            return None
 
 
 class GameState(Enum):

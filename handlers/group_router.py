@@ -9,9 +9,9 @@ from aiogram import F
 from classes.game import Game, GameState
 from classes.player import Player
 from keyboards import inline
-from data.roles import roles_list
+from data.roles import roles_list, mafia, lawyer, don
 from keyboards.inline import choose_mafia_victim_kb, choose_don_check, choose_sheriff_check, choose_lawyer_def, \
-    choose_doctor_def, choose_prostitute_sleep, choose_maniac_victim
+    choose_doctor_heal, choose_prostitute_sleep, choose_maniac_victim, day_vote_kb
 
 user_group_router = Router()
 user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group", "supergroup"]))
@@ -35,6 +35,9 @@ async def invite_cb(callback: CallbackQuery) -> None:
     game_id = int(callback.data.replace('invite_cb-', ''))
     try:
         game = Game.find_by_id(game_id)
+        if game.state != GameState.waiting:
+            await callback.answer("Игра уже началась!")
+            return
         cur_user = Player((await callback.bot.get_chat_member(chat_id=callback.message.chat.id,
                                                               user_id=callback.from_user.id)).user, game_id)
     except IndexError:
@@ -44,6 +47,7 @@ async def invite_cb(callback: CallbackQuery) -> None:
     if not await game.add_player(cur_user, callback):
         await callback.answer("Ошибка")
         return
+
 
     admin = game.admin
     await callback.answer()
@@ -96,17 +100,19 @@ async def game_start_cb(callback: CallbackQuery) -> None:
 
     await game.start()
 
-    await night(callback, game)
-
     await callback.answer()
     await callback.message.edit_caption(caption=game_started_message(game))
 
+    await night(callback, game)
+
 
 async def night(callback: CallbackQuery, game: Game):
+
+    print("night")
     game.create_night_vote()
 
     for player in game.players:
-        if player.role.id == 0:  # MAFIA
+        if player.role.id in [0, 3]:  # MAFIA
             message = ""
             mafia = [i for i in game.players if i.role.id == 0 and i.is_alive]
             if len(mafia) > 1:
@@ -117,25 +123,13 @@ async def night(callback: CallbackQuery, game: Game):
                      for i in game.players if i.role.id == 0 and i.is_alive and i != player])
                 message += f"Ваши союзники: {other_mafia}\n"
             message += "Выберите жертву:"
-            await callback.bot.send_message(player.id, message, reply_markup=choose_mafia_victim_kb(game))
+            await callback.bot.send_message(player.id, message, reply_markup=choose_mafia_victim_kb(game, player))
 
         if player.role.id == 2:  # PROSTITUTE
             message = "Выберите игрока, с которым хотите переспать:"
             await callback.bot.send_message(player.id, message, reply_markup=choose_prostitute_sleep(game))
 
         if player.role.id == 3:  # DON
-            message = ""
-            mafia = [i for i in game.players if i.role.id == 0 and i.is_alive]
-            if len(mafia) > 1:
-                other_mafia = ', '.join(
-                    [f'<a href="tg://user?id={i.id}">'
-                     f'{'🐺' if i.role.id == 3 else '⚖️' if i.role.id == 5 else ''}{i.name}'
-                     f'</a>'
-                     for i in game.players if i.role.id in [0, 3, 5] and i.is_alive and i != player])
-                message += f"Ваши союзники: {other_mafia}\n"
-            message += "Выберите жертву:"
-            await callback.bot.send_message(player.id, message, reply_markup=choose_mafia_victim_kb(game))
-
             message = "Выберите игрока, которого вы хотите проверить:"
             await callback.bot.send_message(player.id, message, reply_markup=choose_don_check(game))
 
@@ -149,7 +143,7 @@ async def night(callback: CallbackQuery, game: Game):
 
         if player.role.id == 6:  # DOCTOR
             message = "Выберите игрока, которого вы хотите защитить:"
-            await callback.bot.send_message(player.id, message, reply_markup=choose_doctor_def(game))
+            await callback.bot.send_message(player.id, message, reply_markup=choose_doctor_heal(game))
 
         if player.role.id == 7:  # MANIAC
             message = "Выберите игрока, вы хотите убить:"
@@ -160,6 +154,33 @@ async def night(callback: CallbackQuery, game: Game):
             if len(sheriffs) == 0:
                 message = "Выберите игрока, которого вы хотите защитить:"
                 await callback.bot.send_message(player.id, message, reply_markup=choose_sheriff_check(game))
+
+    await game.goto_morning(callback)
+
+    if game.mafia_team_count() >= game.civilian_team_count():
+        game.state = GameState.ended
+        await callback.message.answer(f"Мафия победила!\n\nВеликие мафиози: "
+                                      f"{', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
+        game.instances.remove(game)
+    else:
+        await day(callback=callback, game=game)
+
+
+async def day(callback: CallbackQuery, game: Game):
+    game.create_day_vote()
+    print("day")
+    for player in game.players:
+        if not player.is_alive:
+            continue
+        await callback.bot.send_message(chat_id=player.id, text="Дневное голосование\nВыберите игрока, которого хотите исключить", reply_markup=day_vote_kb(game, player))
+
+    if game.mafia_team_count() == 0:
+        game.state = GameState.ended
+        await callback.message.answer(f"Мирные жители выиграли!\n\nМафией были: "
+                                      f"{', '.join([f'{player.name}' for player in game.players if player.role in 
+                                                    [mafia, don, lawyer]])}")
+        game.instances.remove(game)
+    await game.goto_night(callback=callback)
 
 
 def start_game_message(admin: Player, game: Game):
