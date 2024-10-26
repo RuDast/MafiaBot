@@ -176,17 +176,13 @@ async def day(callback: CallbackQuery, game: Game):
 
     if game.mafia_team_count() == 0:
         game.state = GameState.ended
-        await callback.message.answer(f"Мирные жители выиграли!\n\nМафией были: "
-                                      f"{', '.join([f'{player.name}' for player in game.players if player.role in 
-                                                    [mafia, don, lawyer]])}")
+        await callback.message.answer(f"Мирные жители выиграли!\n\nМафией были: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
         game.instances.remove(game)
     await game.goto_night(callback=callback)
 
 
 def start_game_message(admin: Player, game: Game):
-    return (f"{admin.name} открыл набор в мафию\n"
-            f"\n"
-            f"Играют:\n"
+    return (f"{admin.name} открыл набор в мафию\n\nИграют:\n
             f'{"\n".join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}'
             f"\n"
             f"\n"
