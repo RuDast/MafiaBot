@@ -118,7 +118,7 @@ async def night(callback: CallbackQuery, game: Game):
             if len(mafia) > 1:
                 other_mafia = ', '.join(
                     [f'<a href="tg://user?id={i.id}">'
-                     f'{'🐺' if i.role.id == 3 else '⚖️' if i.role.id == 5 else ''}{i.name}'
+                     f'{'' if i.role.id == 3 else '' if i.role.id == 5 else ''}{i.name}'
                      f'</a>'
                      for i in game.players if i.role.id == 0 and i.is_alive and i != player])
                 message += f"Ваши союзники: {other_mafia}\n"
