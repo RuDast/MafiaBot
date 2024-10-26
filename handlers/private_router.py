@@ -34,15 +34,17 @@ async def roles_pagination_callback(callback: CallbackQuery) -> None:
 @user_private_router.callback_query(F.data == "rules_cb")
 async def rules_callback(callback: CallbackQuery) -> None:
     await callback.answer()
+    pic = FSInputFile("images/italian-american-mafia.jpg")
     if callback.message.caption != messages["RULES_MESSAGE"]:
-        await callback.message.edit_caption(caption=messages["RULES_MESSAGE"], reply_markup=inline.start_kb)
-
+        await callback.message.edit_media(media=InputMediaPhoto(media=pic,
+                                                                caption=messages["RULES_MESSAGE"]),
+                                          reply_markup=inline.start_kb)
 
 @user_private_router.callback_query(F.data == "about_cb")
 async def about_callback(callback: CallbackQuery) -> None:
     await callback.answer()
     if callback.message.caption != messages["ABOUT_MESSAGE"]:
-        await callback.message.edit_caption(caption=messages["ABOUT_MESSAGE"], reply_markup=inline.start_kb)
+        await callback.message.edit_media(media=InputMediaPhoto(media=FSInputFile("images/logo.png") ,caption=messages["ABOUT_MESSAGE"]), reply_markup=inline.start_kb)
 
 
 @user_private_router.callback_query(F.data == "home_cb")

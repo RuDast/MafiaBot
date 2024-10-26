@@ -14,16 +14,17 @@ from handlers.group_router import user_group_router
 from utils.bot_commands import private_commands, group_commands
 from middlewares.antiflood import AntiFloodMiddleware
 from data.config import config
+from utils.logger import log_to_admins
 
 
 async def on_startup(bot: Bot) -> None:
-    print('starting bot...')
-    # await log_to_admins(bot, "bot start by floppa")
+    print('The bot is running')
+    await log_to_admins(bot, "The bot is running")
 
 
 async def on_shutdown(bot: Bot) -> None:
-    print('ending bot...')
-    # await log_to_admins(bot, "bot end by floppa")
+    print('The bot is stopped')
+    await log_to_admins(bot, "The bot is stopped")
 
 
 async def main() -> None:

@@ -13,7 +13,7 @@ class Player:
         self.is_alive = True
         Player.instances.append(self)
 
-    def __dict__(self):
+    def __dict__(self) -> dict:
         return {"id": self.id,
                 "role": self.role.id,
                 "is_alive": self.is_alive}

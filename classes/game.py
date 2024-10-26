@@ -43,7 +43,7 @@ class Game:
         if not is_user_in_db(player.id):
             if self._notify_message is None and callback is not None:
                 self._notify_message = await callback.message.answer("<i>⚠️ Для участия в игре необходимо "
-                                                                     "<a href='https://t.me/testfloppa13bot?start=0'>"
+                                                                     "<a href='https://t.me/GuessNNumBot?start=0'>"
                                                                      "написать боту</a>.</i>")
 
             return False

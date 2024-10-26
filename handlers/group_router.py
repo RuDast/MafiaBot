@@ -1,4 +1,3 @@
-from asyncio import sleep
 from random import shuffle
 
 from aiogram import Router, Bot
@@ -10,6 +9,7 @@ from classes.game import Game, GameState
 from classes.player import Player
 from keyboards import inline
 from data.roles import roles_list, mafia, lawyer, don
+from data.config import config
 from keyboards.inline import choose_mafia_victim_kb, choose_don_check, choose_sheriff_check, choose_lawyer_def, \
     choose_doctor_heal, choose_prostitute_sleep, choose_maniac_victim, day_vote_kb
 
@@ -84,9 +84,9 @@ async def game_start_cb(callback: CallbackQuery) -> None:
     if admin.id != callback.from_user.id:
         await callback.answer("Вы не создатель игры")
         return
-    if len(game.players) < 1:  # TODO config['MIN_PLAYERS']
+    if len(game.players) < config['MIN_PLAYERS']:
         await callback.answer(
-            f"Минимальное количество игроков должно составлять 5. Вам не хватает {5 - len(game.players)} игроков")
+            f"Минимальное количество игроков - {config['MIN_PLAYERS']}. Вам не хватает {config['MIN_PLAYERS'] - len(game.players)} игроков")
         return
 
     session_roles = roles_list[:len(game.players)]
@@ -106,16 +106,14 @@ async def game_start_cb(callback: CallbackQuery) -> None:
     await night(callback, game)
 
 
-async def night(callback: CallbackQuery, game: Game):
-
-    print("night")
+async def night(callback: CallbackQuery, game: Game) -> None:
     game.create_night_vote()
 
     for player in game.players:
         if player.role.id in [0, 3]:  # MAFIA
             message = ""
-            mafia = [i for i in game.players if i.role.id == 0 and i.is_alive]
-            if len(mafia) > 1:
+            mafia_players = [i for i in game.players if i.role.id == 0 and i.is_alive]
+            if len(mafia_players) > 1:
                 other_mafia = ', '.join(
                     [f'<a href="tg://user?id={i.id}">'
                      f'{"🐺" if i.role.id == 3 else "⚖️" if i.role.id == 5 else ""}{i.name}'
@@ -142,7 +140,7 @@ async def night(callback: CallbackQuery, game: Game):
             await callback.bot.send_message(player.id, message, reply_markup=choose_lawyer_def(game))
 
         if player.role.id == 6:  # DOCTOR
-            message = "Выберите игрока, которого вы хотите защитить:"
+            message = "Выберите игрока, которого вы хотите спасти:"
             await callback.bot.send_message(player.id, message, reply_markup=choose_doctor_heal(game))
 
         if player.role.id == 7:  # MANIAC
@@ -166,32 +164,35 @@ async def night(callback: CallbackQuery, game: Game):
         await day(callback=callback, game=game)
 
 
-async def day(callback: CallbackQuery, game: Game):
+async def day(callback: CallbackQuery, game: Game) -> None:
     game.create_day_vote()
-    print("day")
-    for player in game.players:
-        if not player.is_alive:
-            continue
-        await callback.bot.send_message(chat_id=player.id, text="Дневное голосование\nВыберите игрока, которого хотите исключить", reply_markup=day_vote_kb(game, player))
 
     if game.mafia_team_count() == 0:
         game.state = GameState.ended
         await callback.message.answer(f"Мирные жители выиграли!\n\nМафией были: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
         game.instances.remove(game)
-    await game.goto_night(callback=callback)
+
+    else:
+        for player in game.players:
+            if not player.is_alive:
+                continue
+            await callback.bot.send_message(chat_id=player.id, text="Дневное голосование\nВыберите игрока, которого хотите исключить", reply_markup=day_vote_kb(game, player))
+
+        await game.goto_night(callback=callback)
 
 
-def start_game_message(admin: Player, game: Game):
+
+def start_game_message(admin: Player, game: Game) -> str:
     return "{} открыл набор в мафию\n\nИграют:\n{}\n\nЕсли вы хотите учавствовать, нажмите на кнопку ниже".format(
         admin.name,
-        {"\n".join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])})
+        "\n".join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players]))
 
 
-def game_started_message(game: Game):
+def game_started_message(game: Game) -> str:
     return "Игра №{} начинается\n\nИгроки:\n{}\n\nРоли были распределены. Город засыпает...".format(
         game.id,
-        {'\n'.join(['<a href="tg://user?id={}">{}</a>'.format(
+        '\n'.join(['<a href="tg://user?id={}">{}</a>'.format(
             player.id,
             player.name
-        ) for player in game.players])}
+        ) for player in game.players])
     )
