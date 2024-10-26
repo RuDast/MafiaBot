@@ -3,7 +3,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from classes.game import Game
 from classes.player import Player
 from data.config import config
-from data.roles import sheriff, prostitute
+from data.roles import sheriff, prostitute, maniac
 
 start_kb = InlineKeyboardMarkup(inline_keyboard=[
     [
@@ -41,9 +41,7 @@ def roles_pagination_kb(index: int) -> InlineKeyboardMarkup:
 def choose_mafia_victim_kb(game: Game, mafia: Player):
     kb = []
     for victim in game.players:
-        if victim.role.id in [0, 3, 5]:
-            continue
-        if not victim.is_alive:
+        if victim.role.id in [0, 3, 5] or not victim.is_alive:
             continue
         kb.append(InlineKeyboardButton(text=f"{victim.name}", callback_data=f"mafia_victim-{game.id}-{victim.id}-{mafia.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
@@ -52,9 +50,7 @@ def choose_mafia_victim_kb(game: Game, mafia: Player):
 def choose_don_check(game: Game):
     kb = []
     for player in game.players:
-        if player.role.id in [0, 3, 5]:
-            continue
-        if not player.is_alive:
+        if player.role.id in [0, 3, 5] or not player.is_alive:
             continue
         kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"don_check-{game.id}-{player.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
@@ -63,14 +59,15 @@ def choose_don_check(game: Game):
 def choose_sheriff_check(game: Game):
     kb = []
     for player in game.players:
-        if player.role != sheriff:
-            kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"sheriff_check-{game.id}-{player.id}"))
+        if player.role == sheriff or not player.is_alive:
+            continue
+        kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"sheriff_check-{game.id}-{player.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
 
 def choose_lawyer_def(game: Game):
     kb = []
     for player in game.players:
-        if player.role.id in [0, 3, 5]:
+        if player.role.id in [0, 3, 5] or not player.is_alive:
             kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"lawyer_def-{game.id}-{player.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
 
@@ -78,7 +75,7 @@ def choose_doctor_heal(game: Game):
     kb = []
     prev_night_vote = game.get_prev_night_vote(2)
     for player in game.players:
-        if prev_night_vote is not None:
+        if prev_night_vote is not None or not player.is_alive:
             if prev_night_vote.doctor_heal == player and player.role != prostitute:
                 continue
         kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"doctor_heal-{game.id}-{player.id}"))
@@ -88,7 +85,7 @@ def choose_prostitute_sleep(game: Game):
     kb = []
     prev_night_vote = game.get_prev_night_vote(2)
     for player in game.players:
-        if player.role == prostitute:
+        if player.role == prostitute or not player.is_alive:
             continue
         if prev_night_vote is not None:
             if prev_night_vote.prostitute_sleep == player:
@@ -99,6 +96,8 @@ def choose_prostitute_sleep(game: Game):
 def choose_maniac_victim(game: Game):
     kb = []
     for player in game.players:
+        if player.role == maniac or not player.is_alive:
+            continue
         kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"maniac_victim-{game.id}-{player.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
 
