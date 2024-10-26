@@ -4,6 +4,6 @@
   "ANTIFLOOD_DELAY": 1,
   "MAX_ROLES_COUNT": 9,
   "MIN_PLAYERS" : 4,
-  "DAY_TIME": 120,
+  "DAY_TIME": 90,
   "NIGHT_TIME": 60
 }

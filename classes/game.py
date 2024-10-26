@@ -110,7 +110,7 @@ class Game:
         if killed_people is not None:
             killed_people.is_alive = False
 
-            await callback.message.answer(f'{killed_people.name} выбыл.')
+            await callback.message.answer(f'{killed_people.name} был убит жителями города.')
 
     def mafia_team_count(self) -> int:
         count = 0

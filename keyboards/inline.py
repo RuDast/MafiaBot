@@ -41,16 +41,22 @@ def roles_pagination_kb(index: int) -> InlineKeyboardMarkup:
 def choose_mafia_victim_kb(game: Game, mafia: Player):
     kb = []
     for victim in game.players:
-        if victim.role.id not in [0, 3, 5]:
-            kb.append(InlineKeyboardButton(text=f"{victim.name}", callback_data=f"mafia_victim-{game.id}-{victim.id}-{mafia.id}"))
+        if victim.role.id in [0, 3, 5]:
+            continue
+        if not victim.is_alive:
+            continue
+        kb.append(InlineKeyboardButton(text=f"{victim.name}", callback_data=f"mafia_victim-{game.id}-{victim.id}-{mafia.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
 
 
 def choose_don_check(game: Game):
     kb = []
     for player in game.players:
-        if player.role.id not in [0, 3, 5]:
-            kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"don_check-{game.id}-{player.id}"))
+        if player.role.id in [0, 3, 5]:
+            continue
+        if not player.is_alive:
+            continue
+        kb.append(InlineKeyboardButton(text=f"{player.name}", callback_data=f"don_check-{game.id}-{player.id}"))
     return InlineKeyboardMarkup(inline_keyboard=[kb])
 
 

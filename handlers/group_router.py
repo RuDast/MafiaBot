@@ -158,7 +158,7 @@ async def night(callback: CallbackQuery, game: Game) -> None:
 
     if game.mafia_team_count() >= game.civilian_team_count():
         game.state = GameState.ended
-        await callback.message.answer(f"Мафия победила!\n\nВеликие мафиози: "
+        await callback.message.answer(f"Мафия победила!\n\nУчастники команды мафии:"
                                       f"{', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
         game.instances.remove(game)
     else:
@@ -168,18 +168,27 @@ async def night(callback: CallbackQuery, game: Game) -> None:
 async def day(callback: CallbackQuery, game: Game) -> None:
     game.create_day_vote()
 
+    for player in game.players:
+        if not player.is_alive:
+            continue
+        await callback.bot.send_message(chat_id=player.id,
+                                        text="Дневное голосование\nВыберите игрока, которого хотите исключить",
+                                        reply_markup=day_vote_kb(game, player))
+
+    await game.goto_night(callback=callback)
+
     if game.mafia_team_count() == 0:
         game.state = GameState.ended
-        await callback.message.answer(f"Мирные жители выиграли!\n\nМафией были: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
+        await callback.message.answer(f"Мирные жители выиграли!\n\nУчастники команды мафии: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
+        game.instances.remove(game)
+    elif game.mafia_team_count() == game.civilian_team_count():
+        game.state = GameState.ended
+        await callback.message.answer(f"Мафия победила!\n\nУчастники команды мафии: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
         game.instances.remove(game)
 
     else:
-        for player in game.players:
-            if not player.is_alive:
-                continue
-            await callback.bot.send_message(chat_id=player.id, text="Дневное голосование\nВыберите игрока, которого хотите исключить", reply_markup=day_vote_kb(game, player))
+        await night(callback, game)
 
-        await game.goto_night(callback=callback)
 
 
 
@@ -190,7 +199,7 @@ def start_game_message(admin: Player, game: Game) -> str:
 
 
 def game_started_message(game: Game) -> str:
-    return "Игра №{} начинается\n\nИгроки:\n{}\n\nРоли были распределены. Город засыпает...".format(
+    return "Игра №{} начинается\n\nИгроки:\n{}\n\nРоли были распределены.".format(
         game.id,
         '\n'.join(['<a href="tg://user?id={}">{}</a>'.format(
             player.id,
