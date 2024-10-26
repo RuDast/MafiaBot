@@ -182,17 +182,8 @@ async def day(callback: CallbackQuery, game: Game):
 
 
 def start_game_message(admin: Player, game: Game):
-    return (f"{admin.name} открыл набор в мафию\n\nИграют:\n"
-            f'{"\n".join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}'
-            f"\n"
-            f"\n"
-            f"Если вы хотите учавствовать, нажмите на кнопку ниже")
+    return f"{admin.name} открыл набор в мафию\n\nИграют:\n{"\n".join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])} \n \nЕсли вы хотите учавствовать, нажмите на кнопку ниже"
 
 
 def game_started_message(game: Game):
-    return (f"Игра №{game.id} начинается\n\n"
-            f"Игроки:\n"
-            f"{'\n'.join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}"
-            f"\n"
-            f"\n"
-            f"Роли были распределены. Город засыпает...")
+    return f"Игра №{game.id} начинается\n\nИгроки:\n{'\n'.join([f'<a href="tg://user?id={player.id}">{player.name}</a>' for player in game.players])}\n\nРоли были распределены. Город засыпает..."
