@@ -108,6 +108,7 @@ async def game_start_cb(callback: CallbackQuery) -> None:
 
 async def night(callback: CallbackQuery, game: Game) -> None:
     game.create_night_vote()
+    await callback.message.answer(text="Город засыпает.....")
 
     for player in game.players:
         if player.role.id in [0, 3]:  # MAFIA
