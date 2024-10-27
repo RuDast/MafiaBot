@@ -12,6 +12,7 @@ from data.roles import roles_list, mafia, lawyer, don
 from data.config import config
 from keyboards.inline import choose_mafia_victim_kb, choose_don_check, choose_sheriff_check, choose_lawyer_def, \
     choose_doctor_heal, choose_prostitute_sleep, choose_maniac_victim, day_vote_kb
+from utils.logger import notify_start_game, notify_new_game, notify_delete_game, notify_end_game
 
 user_group_router = Router()
 user_group_router.message.filter(F.chat.func(lambda chat: chat.type in ["group", "supergroup"]))
@@ -28,6 +29,7 @@ async def start_game_command(message: Message, bot: Bot) -> None:
 
     pic = FSInputFile("images/italian-american-mafia.jpg")
     await message.answer_photo(pic, start_game_message(admin, game), reply_markup=inline.game_start_kb(game.id))
+    await notify_new_game(message=message, game=game)
 
 
 @user_group_router.callback_query(F.data.startswith('invite_cb'))
@@ -102,8 +104,22 @@ async def game_start_cb(callback: CallbackQuery) -> None:
 
     await callback.answer()
     await callback.message.edit_caption(caption=game_started_message(game))
+    await notify_start_game(callback=callback, game=game)
 
     await night(callback, game)
+
+
+@user_group_router.callback_query(F.data.startswith('game_delete_cb'))
+async def game_delete_cb(callback: CallbackQuery) -> None:
+    game_id = int(callback.data.replace('game_delete_cb-', ''))
+    game = Game.find_by_id(game_id)
+    admin = game.admin
+    if admin.id != callback.from_user.id:
+        await callback.answer("Игру может удалить только создатель.")
+        return
+
+    await notify_delete_game(callback=callback, game=game)
+    await callback.message.delete()
 
 
 async def night(callback: CallbackQuery, game: Game) -> None:
@@ -157,10 +173,8 @@ async def night(callback: CallbackQuery, game: Game) -> None:
     await game.goto_morning(callback)
 
     if game.mafia_team_count() >= game.civilian_team_count():
-        game.state = GameState.ended
-        await callback.message.answer(f"Мафия победила!\n\nУчастники команды мафии:"
-                                      f"{', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
-        game.instances.remove(game)
+        await game.mafia_win(callback=callback)
+        await notify_end_game(callback, game)
     else:
         await day(callback=callback, game=game)
 
@@ -178,13 +192,12 @@ async def day(callback: CallbackQuery, game: Game) -> None:
     await game.goto_night(callback=callback)
 
     if game.mafia_team_count() == 0:
-        game.state = GameState.ended
-        await callback.message.answer(f"Мирные жители выиграли!\n\nУчастники команды мафии: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
-        game.instances.remove(game)
-    elif game.mafia_team_count() == game.civilian_team_count():
-        game.state = GameState.ended
-        await callback.message.answer(f"Мафия победила!\n\nУчастники команды мафии: {', '.join([f'{player.name}' for player in game.players if player.role in [mafia, don, lawyer]])}")
-        game.instances.remove(game)
+        await game.civilian_win(callback=callback)
+        await notify_end_game(callback=callback, game=game)
+
+    elif game.mafia_team_count() >= game.civilian_team_count():
+        await game.mafia_win(callback=callback)
+        await notify_end_game(callback=callback, game=game)
 
     else:
         await night(callback, game)

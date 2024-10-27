@@ -22,3 +22,4 @@ class JSONStructure:
 
 config = JSONStructure(file_path="data/config.json")
 messages = JSONStructure(file_path="data/messages.json")
+users = JSONStructure(file_path="database/users.json")

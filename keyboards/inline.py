@@ -15,6 +15,11 @@ start_kb = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
+mailing_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text="Старт", url="https://t.me/DonCorlBot?start=0")
+    ]
+])
 
 def game_start_kb(game_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -24,6 +29,9 @@ def game_start_kb(game_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="Начать игру", callback_data=f"game_start_cb-{game_id}")
+        ],
+        [
+            InlineKeyboardButton(text="Удалить игру", callback_data=f"game_delete_cb-{game_id}")
         ]
     ])
 

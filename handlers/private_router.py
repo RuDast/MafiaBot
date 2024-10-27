@@ -1,14 +1,16 @@
 from aiogram import Router
 from aiogram.types import Message, FSInputFile, CallbackQuery, InputMediaPhoto
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram import F
+
+from asyncio import sleep
 
 from classes.game import Game
 from classes.player import Player
 from classes.vote import NightVote, DayVote
 from database.database import add_new_user
 from keyboards import inline
-from data.config import messages
+from data.config import messages, users
 from data.roles import roles_index_list, roles_data, sheriff, mafia, lawyer, don
 
 user_private_router = Router()
@@ -55,7 +57,6 @@ async def start_callback(callback: CallbackQuery):
                                                             caption=messages["START_MESSAGE"]),
                                       reply_markup=inline.start_kb)
 
-# VOTES BELOW
 @user_private_router.callback_query(F.data.startswith("mafia_victim-"))
 async def mafia_vote_callback(callback: CallbackQuery):
     data = callback.data.replace("mafia_victim-", "").split('-')
@@ -68,10 +69,8 @@ async def mafia_vote_callback(callback: CallbackQuery):
     vote: NightVote = game.get_prev_night_vote(1)
     vote.mafia_vote(mafia, victim)
 
-
     # TODO если равны кол-во голосов и макс кол-во голосов, не ждать таймер
-    # vote.get_votes_count() == vote.get_max_votes_count():
-    # skip_waiting()
+
 
     await callback.answer(f"Ваш голос за {victim.name} успешно отдан.")
     await callback.message.delete()
@@ -157,7 +156,7 @@ async def player_day_vote_callback(callback: CallbackQuery) -> None:
     await callback.answer(f"Голос за {selected_player.name} успешно отдан")
     await callback.message.delete()
 
-
 @user_private_router.message()
 async def unknown_message(message: Message) -> None:
     await message.delete()
+

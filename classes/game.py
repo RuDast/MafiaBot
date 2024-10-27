@@ -8,6 +8,7 @@ from classes.player import Player
 from classes.vote import Vote, NightVote, DayVote
 from data.roles import mafia, lawyer, don
 from database.database import is_user_in_db
+from utils.logger import log_to_admins, notify_new_game
 
 
 class Game:
@@ -25,6 +26,9 @@ class Game:
         self._bot = bot
         self._chat_id = chat_id
         self._notify_message: Message | None = None
+        self.win: str | None = None
+        self.original_players = self.players
+
         Game.instances.append(self)
 
     async def appoint_admin(self, admin: Player):
@@ -32,10 +36,12 @@ class Game:
         await self.add_player(admin)
 
     async def start(self):
+        self.original_players = self.players
         self.state = GameState.night
         # self.dump_session()
         if self._notify_message is not None:
             await self._bot.delete_message(self._chat_id, self._notify_message.message_id)
+
 
     async def add_player(self, player: Player, callback: CallbackQuery | None = None) -> bool:
         if any([pl.id == player.id for pl in self.players]):
@@ -43,7 +49,7 @@ class Game:
         if not is_user_in_db(player.id):
             if self._notify_message is None and callback is not None:
                 self._notify_message = await callback.message.answer("<i>⚠️ Для участия в игре необходимо "
-                                                                     "<a href='https://t.me/GuessNNumBot?start=0'>"
+                                                                     "<a href='https://t.me/DonCorlBot?start=0'>"
                                                                      "написать боту</a>.</i>")
 
             return False
@@ -125,6 +131,18 @@ class Game:
             if player.role not in [don, mafia, lawyer] and player.is_alive:
                 count += 1
         return count
+
+    async def mafia_win(self, callback: CallbackQuery):
+        self.win = "mafia"
+        self.state = GameState.ended
+        await callback.message.answer(f"Мафия победила!\n\nУчастники команды мафии: {', '.join([f'{player.name}' for player in self.players if player.role in [mafia, don, lawyer]])}")
+        self.instances.remove(self)
+
+    async def civilian_win(self, callback: CallbackQuery):
+        self.win = "civilian"
+        self.state = GameState.ended
+        await callback.message.answer(f"Мирные жители выиграли!\n\nУчастники команды мафии: {', '.join([f'{player.name}' for player in self.players if player.role in [mafia, don, lawyer]])}")
+        self.instances.remove(self)
 
 
 
