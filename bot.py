@@ -18,13 +18,11 @@ from utils.logger import log_to_admins
 
 
 async def on_startup(bot: Bot) -> None:
-    print('The bot is running')
-    await log_to_admins(bot, "The bot is running")
+    await log_to_admins(bot, "✅ Бот успешно запущен.")
 
 
 async def on_shutdown(bot: Bot) -> None:
-    print('The bot is stopped')
-    await log_to_admins(bot, "The bot is stopped")
+    await log_to_admins(bot, "❌ Бот выключен. Может произошла ошибка?")
 
 
 async def main() -> None:
